@@ -70,6 +70,7 @@ class ViterbiDecoder:
       if(deltaSum > 0.0):
         oldDelta = delta / deltaSum
       else:
+        print(iFrame + 1)
         print("WARNING: Viterbi decoder has been fed some invalid probabilities.", file = sys.stderr)
         oldDelta.fill(1.0 / nState)
     self.oldDelta = oldDelta
@@ -94,3 +95,27 @@ class ViterbiDecoder:
     for iFrame in reversed(range(nFrame - 1)):
       path[iFrame] = psi[iFrame][path[iFrame + 1]] # psi[iFrame] is iFrame + 1 of `real` psi
     return path
+
+def learnFromPath(path, nState):
+  initStateProb = np.zeros(nState, dtype = np.float32)
+  srcState = np.repeat(np.arange(nState, dtype = np.int32), nState)
+  targetState = np.tile(np.arange(nState, dtype = np.int32), nState)
+  stateTransProb = np.zeros((nState, nState), dtype = np.float32)
+
+  for i, x in enumerate(path[:-1]):
+    initStateProb[x] += 1
+    stateTransProb[x, path[i + 1]] += 1
+  
+  s = np.sum(stateTransProb, axis = 1)
+  need = s > 0
+  stateTransProb[need] /= s[need].reshape(np.sum(need), 1)
+  stateTransProb = stateTransProb.reshape(nState * nState)
+
+  initStateProb += 1e-5
+  initStateProb /= np.sum(initStateProb)
+  need = stateTransProb > 0
+  srcState = srcState[need].copy()
+  targetState = targetState[need].copy()
+  stateTransProb = stateTransProb[need].copy()
+
+  return initStateProb, srcState, targetState, stateTransProb

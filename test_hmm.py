@@ -7,8 +7,7 @@ obsProbList += 1e-5
 obsProbList /= np.sum(obsProbList, axis=1).reshape(obsProbList.shape[0], 1)
 
 initStateProb = np.ones(3, dtype = np.float32) / 3
-transProb = np.ones(9, dtype = np.float32) / 8
-transProb[-3] = 0
+transProb = np.array((1/3, 1/3, 1/3, 1/3, 1/3, 1/3, 0, 0.5, 0.5), dtype = np.float32)
 
 vd = hmm.ViterbiDecoder(3)
 
